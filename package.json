@@ -17,7 +17,10 @@
   },
   "homepage": "https://github.com/jtschuwirth/DFK-Lending-SmartContracts#readme",
   "dependencies": {
+    "@harmony-js/core": "^0.1.57",
     "@openzeppelin/contracts": "^4.5.0",
-    "@openzeppelin/contracts-upgradeable": "^4.5.1"
+    "@openzeppelin/contracts-upgradeable": "^4.5.1",
+    "@truffle/hdwallet-provider": "^2.0.3",
+    "dotenv": "^16.0.0"
   }
 }

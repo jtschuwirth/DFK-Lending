@@ -11,6 +11,9 @@ contract HeroLending is Initializable, ERC721Holder {
 
     event NewOffer(uint offerId);
     event CancelOffer(uint offerId);
+    event AcceptOffer(uint offerId);
+    event repayOffer(uint offerId);
+    event Liquidate(uint offerId);
 
     struct Offer {
         address owner;
@@ -25,22 +28,68 @@ contract HeroLending is Initializable, ERC721Holder {
         string status;
     }
 
-    address HeroAddress = address(0);
-    address JewelAddress = address(0);
+    address HeroAddress;
+    address JewelAddress;
+    address PayOutAddress;
     Offer[] public offers;
     AbstractHero hero;
     AbstractJewel jewel;
 
     function initialize() initializer public {
+        HeroAddress = address(0);
+        JewelAddress = address(0);
+        PayOutAddress = "0x867df63D1eEAEF93984250f78B4bd83C70652dcE";
         hero = AbstractHero(HeroAddress);
         jewel = AbstractJewel(JewelAddress);
     }
 
+    //View Functions
+
+    function offerOwner(uint offerId) public view returns (address) {
+        return offers[offerId].owner;
+    }
+
+    function offerheroId(uint offerId) public view returns (uint) {
+        return offers[offerId].heroId;
+    }
+
+    function offerLiquidation(uint offerId) public view returns (uint) {
+        return offers[offerId].liquidation;
+    }
+
+
+
+    function offerBorrower(uint offerId) public view returns (address) {
+        return offers[offerId].borrower;
+    }
+
+    function offerCollateral(uint offerId) public view returns (uint) {
+        return offers[offerId].collateral;
+    }
+
+    function offerAcceptTime(uint offerId) public view returns (uint) {
+        return offers[offerId].acceptTime;
+    }
+
+
+
+    function offerStatus(uint offerId) public view returns (string memory) {
+        return offers[offerId].status;
+    }
+
+    function offersQuantity() public view returns (uint) {
+        uint quantity = offers.length;
+        return quantity;
+    }
+
+    //Main Functions
+
     function createOffer(uint heroId, uint liquidation, uint fee) public {
         require(hero.ownerOf(heroId) == msg.sender);
-        hero.safeTransferFrom(msg.sender, address(this), heroId);
+
         uint offerId = offers.length;
         offers.push(Offer(msg.sender, heroId, liquidation, fee, address(0), 0, 0, "Open"));
+        hero.safeTransferFrom(msg.sender, address(this), heroId);
         emit NewOffer(offerId);
     }
 
@@ -48,6 +97,7 @@ contract HeroLending is Initializable, ERC721Holder {
         require(offers[offerId].owner == msg.sender);
         require(hero.ownerOf(offers[offerId].heroId) == address(this));
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("Open")));
+
         offers[offerId].status = "Cancelled";
         hero.safeTransferFrom(address(this), msg.sender, offers[offerId].heroId);
         emit CancelOffer(offerId);
@@ -56,7 +106,8 @@ contract HeroLending is Initializable, ERC721Holder {
     function acceptOffer(uint offerId, uint collateral) public {
         require(offers[offerId].owner != msg.sender);
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("Open")));
-        require(collateral > offers[offerId].liquidation);
+        uint minimumFee = offers[offerId].dailyFee/24;
+        require(collateral > offers[offerId].liquidation + minimumFee);
         require(jewel.balanceOf(msg.sender) >= collateral);
 
         offers[offerId].status = "On";
@@ -65,6 +116,7 @@ contract HeroLending is Initializable, ERC721Holder {
         offers[offerId].acceptTime = block.timestamp;
         jewel.transferFrom(msg.sender, address(this), collateral);
         hero.safeTransferFrom(address(this), msg.sender, offers[offerId].heroId);
+        emit AcceptOffer(offerId);
     }
 
     function repayOffer(uint offerId) public {
@@ -73,11 +125,18 @@ contract HeroLending is Initializable, ERC721Holder {
         require(hero.ownerOf(offers[offerId].heroId) == msg.sender);
         require(jewel.balanceOf(address(this)) >= offers[offerId].collateral);
         require(offers[offerId].acceptTime != 0);
-        uint feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*24))*offers[offerId].dailyFee;
+        uint feeToPay;
+        //minimum Fee is at least 1 hour
+        if (block.timestamp - offers[offerId].acceptTime < 60*60) {
+            feeToPay = offers[offerId].dailyFee/24;
+        } else {
+            feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*60*24))*offers[offerId].dailyFee;
+        }
         // User is not liquidated
-        require(offers[offerId].collateral > feeToPay+offers[offerId].liquidation);
+        require(offers[offerId].collateral > feeToPay + offers[offerId].liquidation);
 
-        jewel.transferFrom(address(this), offers[offerId].owner, feeToPay);
+        jewel.transferFrom(address(this), offers[offerId].owner, feeToPay*96/100);
+        jewel.transferFrom(address(this), PayOutAddress, feeToPay*4/100);
         jewel.transferFrom(address(this), msg.sender, offers[offerId].collateral - feeToPay);
         hero.safeTransferFrom(msg.sender, address(this), offers[offerId].heroId);
 
@@ -85,16 +144,27 @@ contract HeroLending is Initializable, ERC721Holder {
         offers[offerId].collateral = 0;
         offers[offerId].acceptTime = 0;
         offers[offerId].status = "Open";
+        emit repayOffer(offerId);
+    }
 
+    function addCollateral(uint offerId, uint extraCollateral) public {
+        require(offers[offerId].borrower == msg.sender);
+        require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")));
+        require(jewel.balanceOf(address(this)) >= extaCollateral);
+
+        offers[offerId].collateral = offers[offerId].collateral + extraCollateral;
+        jewel.transferFrom(msg.sender, address(this), extraCollateral);
     }
 
     function liquidate(uint offerId) public {
-        uint feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*24))*offers[offerId].dailyFee;
+        uint feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*60*24))*offers[offerId].dailyFee;
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")));
         require(offers[offerId].collateral < feeToPay+offers[offerId].liquidation);
 
-        jewel.transferFrom(address(this), offers[offerId].owner, offers[offerId].collateral);
         offers[offerId].status = "Liquidated";
+        jewel.transferFrom(address(this), offers[offerId].owner, offers[offerId].collateral*90/100);
+        jewel.transferFrom(address(this), PayOutAddress, offers[offerId].collateral*10/100);
+        Liquidate(offerId);
     }
 
     }
