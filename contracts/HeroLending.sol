@@ -5,10 +5,9 @@ pragma solidity ^0.8.3;
 import "./AbstractHero.sol";
 import "./AbstractJewel.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import "../node_modules/@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../node_modules/@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract HeroLending is Initializable, AccessControlUpgradeable, ERC721Holder {
+contract HeroLending is Initializable, ERC721Holder {
 
     event NewOffer(uint offerId);
     event CancelOffer(uint offerId);
@@ -35,7 +34,6 @@ contract HeroLending is Initializable, AccessControlUpgradeable, ERC721Holder {
     function initialize() initializer public {
         hero = AbstractHero(HeroAddress);
         jewel = AbstractJewel(JewelAddress);
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     function createOffer(uint heroId, uint liquidation, uint fee) public {
@@ -58,6 +56,7 @@ contract HeroLending is Initializable, AccessControlUpgradeable, ERC721Holder {
     function acceptOffer(uint offerId, uint collateral) public {
         require(offers[offerId].owner != msg.sender);
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("Open")));
+        require(collateral > offers[offerId].liquidation);
         require(jewel.balanceOf(msg.sender) >= collateral);
 
         offers[offerId].status = "On";
@@ -91,6 +90,7 @@ contract HeroLending is Initializable, AccessControlUpgradeable, ERC721Holder {
 
     function liquidate(uint offerId) public {
         uint feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*24))*offers[offerId].dailyFee;
+        require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")));
         require(offers[offerId].collateral < feeToPay+offers[offerId].liquidation);
 
         jewel.transferFrom(address(this), offers[offerId].owner, offers[offerId].collateral);
