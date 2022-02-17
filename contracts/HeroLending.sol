@@ -131,17 +131,17 @@ contract HeroLending is Initializable, ERC721Holder {
         require(offers[offerId].acceptTime != 0);
         uint feeToPay;
         //minimum Fee is at least 1 hour
-        if (block.timestamp - offers[offerId].acceptTime < 60*60) {
+        if ((block.timestamp - offers[offerId].acceptTime) < 60*60) {
             feeToPay = offers[offerId].dailyFee/24;
         } else {
             feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*60*24))*offers[offerId].dailyFee;
         }
         // User is not liquidated
-        require(offers[offerId].collateral > feeToPay + offers[offerId].liquidation);
+        require(offers[offerId].collateral > (feeToPay + offers[offerId].liquidation));
 
-        jewel.transferFrom(address(this), offers[offerId].owner, feeToPay*96/100);
-        jewel.transferFrom(address(this), PayOutAddress, feeToPay*4/100);
-        jewel.transferFrom(address(this), msg.sender, offers[offerId].collateral - feeToPay);
+        jewel.transfer(offers[offerId].owner, feeToPay*96/100);
+        jewel.transfer(PayOutAddress, feeToPay*4/100);
+        jewel.transfer(msg.sender, (offers[offerId].collateral - feeToPay));
         hero.safeTransferFrom(msg.sender, address(this), offers[offerId].heroId);
 
         offers[offerId].borrower = address(0);
@@ -163,11 +163,11 @@ contract HeroLending is Initializable, ERC721Holder {
     function liquidate(uint offerId) public {
         uint feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*60*24))*offers[offerId].dailyFee;
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")));
-        require(offers[offerId].collateral < feeToPay+offers[offerId].liquidation);
+        require(offers[offerId].collateral < (feeToPay + offers[offerId].liquidation));
 
         offers[offerId].status = "Liquidated";
-        jewel.transferFrom(address(this), offers[offerId].owner, offers[offerId].collateral*90/100);
-        jewel.transferFrom(address(this), PayOutAddress, offers[offerId].collateral*10/100);
+        jewel.transfer(offers[offerId].owner, offers[offerId].collateral*90/100);
+        jewel.transfer(PayOutAddress, offers[offerId].collateral*10/100);
         emit Liquidate(offerId);
     }
 }

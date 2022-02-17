@@ -1,13 +1,28 @@
 {
   "manifestVersion": "3.2",
   "admin": {
-    "address": "0x001bc06B2117b47714ea6E1E9DB166651435dc19",
-    "txHash": "0x7992e1c2f63d11068142a8e04f231ead1bcc05697455f933201ec4f3eba6e9d0"
+    "address": "0x7b027aef7fEa7657C9b751f09411d208ab26C4CC",
+    "txHash": "0x48ad7f028d9b209cea3bb6117236dbaa0caf8e298848ce763c2476f3a1c55a46"
   },
   "proxies": [
     {
       "address": "0xAE1ba25a189a54e03369e2A4DAE1701591c261E3",
       "txHash": "0xcc80dd71d248ff57dd88578f1d260777066b35003f5fe6d48ec497bc837f55c7",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x26c27b24b09765Dffa2F87966E85c0e141305DB5",
+      "txHash": "0x743d082f07326540c871a3ecc7711bb3f3bfe1a1c56ac372b888042938523655",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x9CBB8b7927527B956B73edE2466Ce813457F61F2",
+      "txHash": "0xb4cc0b3153d8aabba06ebfca6c1f1af89e426c4bfa588e50147190a6052b3224",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xA768Bd3A7B6f798D7Ab96757a0375fa2159B8E69",
+      "txHash": "0x3ad8f2851a11eccdd8ac1864b565ed597230336b0ad31447ec7333dd0d0b0c00",
       "kind": "transparent"
     }
   ],
@@ -15,6 +30,354 @@
     "4168c00503b59389ad3e5f2fc21b5f81dbf1edbd7acb48764cc4b9464e7c7ec1": {
       "address": "0xaa4B9BD35B086055698B7C90F4d63CdCe52EE163",
       "txHash": "0x87fc2cf9906c6d8eee1d189ac13b87489decf0c8d44a58f77ac54f5818e14b60",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "..\\project:\\node_modules\\@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:39"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "..\\project:\\node_modules\\@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:44"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "HeroAddress",
+            "type": "t_address",
+            "src": "..\\project:\\contracts\\HeroLending.sol:31"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "JewelAddress",
+            "type": "t_address",
+            "src": "..\\project:\\contracts\\HeroLending.sol:32"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "PayOutAddress",
+            "type": "t_address",
+            "src": "..\\project:\\contracts\\HeroLending.sol:33"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "offers",
+            "type": "t_array(t_struct(Offer)58_storage)dyn_storage",
+            "src": "..\\project:\\contracts\\HeroLending.sol:34"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "hero",
+            "type": "t_contract(AbstractHero)5",
+            "src": "..\\project:\\contracts\\HeroLending.sol:35"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "jewel",
+            "type": "t_contract(AbstractJewel)11",
+            "src": "..\\project:\\contracts\\HeroLending.sol:36"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address"
+          },
+          "t_array(t_struct(Offer)58_storage)dyn_storage": {
+            "label": "struct HeroLending.Offer[]"
+          },
+          "t_struct(Offer)58_storage": {
+            "label": "struct HeroLending.Offer",
+            "members": [
+              {
+                "label": "owner",
+                "type": "t_address"
+              },
+              {
+                "label": "heroId",
+                "type": "t_uint256"
+              },
+              {
+                "label": "liquidation",
+                "type": "t_uint256"
+              },
+              {
+                "label": "dailyFee",
+                "type": "t_uint256"
+              },
+              {
+                "label": "borrower",
+                "type": "t_address"
+              },
+              {
+                "label": "collateral",
+                "type": "t_uint256"
+              },
+              {
+                "label": "acceptTime",
+                "type": "t_uint256"
+              },
+              {
+                "label": "status",
+                "type": "t_string_storage"
+              }
+            ]
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_string_storage": {
+            "label": "string"
+          },
+          "t_contract(AbstractHero)5": {
+            "label": "contract AbstractHero"
+          },
+          "t_contract(AbstractJewel)11": {
+            "label": "contract AbstractJewel"
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        }
+      }
+    },
+    "c3425c20eb91eb7af9c69846edee50992200fa8e2e2e91c5d47652255f7d7cd3": {
+      "address": "0x0CC585C31C25cCB62f9E85bC161383925288DA9b",
+      "txHash": "0x4d7e99fc224100abdc2d08e8d94b01006527f3693e2669d5b7dd80a02d495546",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "..\\project:\\node_modules\\@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:39"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "..\\project:\\node_modules\\@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:44"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "HeroAddress",
+            "type": "t_address",
+            "src": "..\\project:\\contracts\\HeroLending.sol:31"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "JewelAddress",
+            "type": "t_address",
+            "src": "..\\project:\\contracts\\HeroLending.sol:32"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "PayOutAddress",
+            "type": "t_address",
+            "src": "..\\project:\\contracts\\HeroLending.sol:33"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "offers",
+            "type": "t_array(t_struct(Offer)58_storage)dyn_storage",
+            "src": "..\\project:\\contracts\\HeroLending.sol:34"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "hero",
+            "type": "t_contract(AbstractHero)5",
+            "src": "..\\project:\\contracts\\HeroLending.sol:35"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "jewel",
+            "type": "t_contract(AbstractJewel)11",
+            "src": "..\\project:\\contracts\\HeroLending.sol:36"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address"
+          },
+          "t_array(t_struct(Offer)58_storage)dyn_storage": {
+            "label": "struct HeroLending.Offer[]"
+          },
+          "t_struct(Offer)58_storage": {
+            "label": "struct HeroLending.Offer",
+            "members": [
+              {
+                "label": "owner",
+                "type": "t_address"
+              },
+              {
+                "label": "heroId",
+                "type": "t_uint256"
+              },
+              {
+                "label": "liquidation",
+                "type": "t_uint256"
+              },
+              {
+                "label": "dailyFee",
+                "type": "t_uint256"
+              },
+              {
+                "label": "borrower",
+                "type": "t_address"
+              },
+              {
+                "label": "collateral",
+                "type": "t_uint256"
+              },
+              {
+                "label": "acceptTime",
+                "type": "t_uint256"
+              },
+              {
+                "label": "status",
+                "type": "t_string_storage"
+              }
+            ]
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_string_storage": {
+            "label": "string"
+          },
+          "t_contract(AbstractHero)5": {
+            "label": "contract AbstractHero"
+          },
+          "t_contract(AbstractJewel)11": {
+            "label": "contract AbstractJewel"
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        }
+      }
+    },
+    "f1f2570f3488e1553d27bca108507630159a227934e72f2cf067e132b44c6ff4": {
+      "address": "0xeBDFB7F7c562142f43277e76A212CE168D80dC1E",
+      "txHash": "0x6f86f85496fe0622ddbd3e8a0d4d7863fe451e7d497829ae1a951285e7c1069a",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "..\\project:\\node_modules\\@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:39"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "..\\project:\\node_modules\\@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:44"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "HeroAddress",
+            "type": "t_address",
+            "src": "..\\project:\\contracts\\HeroLending.sol:31"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "JewelAddress",
+            "type": "t_address",
+            "src": "..\\project:\\contracts\\HeroLending.sol:32"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "PayOutAddress",
+            "type": "t_address",
+            "src": "..\\project:\\contracts\\HeroLending.sol:33"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "offers",
+            "type": "t_array(t_struct(Offer)58_storage)dyn_storage",
+            "src": "..\\project:\\contracts\\HeroLending.sol:34"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "hero",
+            "type": "t_contract(AbstractHero)5",
+            "src": "..\\project:\\contracts\\HeroLending.sol:35"
+          },
+          {
+            "contract": "HeroLending",
+            "label": "jewel",
+            "type": "t_contract(AbstractJewel)11",
+            "src": "..\\project:\\contracts\\HeroLending.sol:36"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address"
+          },
+          "t_array(t_struct(Offer)58_storage)dyn_storage": {
+            "label": "struct HeroLending.Offer[]"
+          },
+          "t_struct(Offer)58_storage": {
+            "label": "struct HeroLending.Offer",
+            "members": [
+              {
+                "label": "owner",
+                "type": "t_address"
+              },
+              {
+                "label": "heroId",
+                "type": "t_uint256"
+              },
+              {
+                "label": "liquidation",
+                "type": "t_uint256"
+              },
+              {
+                "label": "dailyFee",
+                "type": "t_uint256"
+              },
+              {
+                "label": "borrower",
+                "type": "t_address"
+              },
+              {
+                "label": "collateral",
+                "type": "t_uint256"
+              },
+              {
+                "label": "acceptTime",
+                "type": "t_uint256"
+              },
+              {
+                "label": "status",
+                "type": "t_string_storage"
+              }
+            ]
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_string_storage": {
+            "label": "string"
+          },
+          "t_contract(AbstractHero)5": {
+            "label": "contract AbstractHero"
+          },
+          "t_contract(AbstractJewel)11": {
+            "label": "contract AbstractJewel"
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        }
+      }
+    },
+    "92ac51c302354a05c4b464978182b2b8af75dc7e9c93b789ec265233886139ce": {
+      "address": "0x5866856C83878A265f98e1d9c854eDEd4346fcD2",
+      "txHash": "0xc9bd4aaf44b2ccbc7d0267e0103baf900c681e6918b0f09569f0f50b2d1ee2e9",
       "layout": {
         "storage": [
           {
