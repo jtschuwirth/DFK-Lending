@@ -12,7 +12,7 @@ contract HeroLending is Initializable, ERC721Holder {
     event NewOffer(uint offerId);
     event CancelOffer(uint offerId);
     event AcceptOffer(uint offerId);
-    event repayOffer(uint offerId);
+    event RepayOffer(uint offerId);
     event Liquidate(uint offerId);
 
     struct Offer {
@@ -36,9 +36,9 @@ contract HeroLending is Initializable, ERC721Holder {
     AbstractJewel jewel;
 
     function initialize() initializer public {
-        HeroAddress = address(0);
-        JewelAddress = address(0);
-        PayOutAddress = "0x867df63D1eEAEF93984250f78B4bd83C70652dcE";
+        HeroAddress = 0xCF88D09658dD442E6FA1d721C2d783a8199B8c06;
+        JewelAddress = 0xAc8578b232f08b6FeC672adCe63987f5c57c0249;
+        PayOutAddress = 0x867df63D1eEAEF93984250f78B4bd83C70652dcE;
         hero = AbstractHero(HeroAddress);
         jewel = AbstractJewel(JewelAddress);
     }
@@ -49,12 +49,16 @@ contract HeroLending is Initializable, ERC721Holder {
         return offers[offerId].owner;
     }
 
-    function offerheroId(uint offerId) public view returns (uint) {
+    function offerHeroId(uint offerId) public view returns (uint) {
         return offers[offerId].heroId;
     }
 
     function offerLiquidation(uint offerId) public view returns (uint) {
         return offers[offerId].liquidation;
+    }
+
+    function offerDailyFee(uint offerId) public view returns (uint) {
+        return offers[offerId].dailyFee;
     }
 
 
@@ -144,13 +148,13 @@ contract HeroLending is Initializable, ERC721Holder {
         offers[offerId].collateral = 0;
         offers[offerId].acceptTime = 0;
         offers[offerId].status = "Open";
-        emit repayOffer(offerId);
+        emit RepayOffer(offerId);
     }
 
     function addCollateral(uint offerId, uint extraCollateral) public {
         require(offers[offerId].borrower == msg.sender);
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")));
-        require(jewel.balanceOf(address(this)) >= extaCollateral);
+        require(jewel.balanceOf(address(this)) >= extraCollateral);
 
         offers[offerId].collateral = offers[offerId].collateral + extraCollateral;
         jewel.transferFrom(msg.sender, address(this), extraCollateral);
@@ -164,10 +168,6 @@ contract HeroLending is Initializable, ERC721Holder {
         offers[offerId].status = "Liquidated";
         jewel.transferFrom(address(this), offers[offerId].owner, offers[offerId].collateral*90/100);
         jewel.transferFrom(address(this), PayOutAddress, offers[offerId].collateral*10/100);
-        Liquidate(offerId);
+        emit Liquidate(offerId);
     }
-
-    }
-
-
 }
