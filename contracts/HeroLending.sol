@@ -4,11 +4,11 @@ pragma solidity ^0.8.3;
 
 import "./AbstractHero.sol";
 import "./AbstractJewel.sol";
-import "../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../node_modules/@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "../node_modules/@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "../node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "../node_modules/@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract HeroLending is Initializable, ERC721Holder, ReentrancyGuard {
+contract HeroLending is Initializable, ERC721HolderUpgradeable, ReentrancyGuardUpgradeable {
 
     event NewOffer(uint offerId);
     event CancelOffer(uint offerId);
