@@ -4,10 +4,11 @@ pragma solidity ^0.8.3;
 
 import "./AbstractHero.sol";
 import "./AbstractJewel.sol";
+import "../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "../node_modules/@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract HeroLending is Initializable, ERC721Holder {
+contract HeroLending is Initializable, ERC721Holder, ReentrancyGuard {
 
     event NewOffer(uint offerId);
     event CancelOffer(uint offerId);
@@ -88,7 +89,7 @@ contract HeroLending is Initializable, ERC721Holder {
 
     //Main Functions
 
-    function createOffer(uint heroId, uint liquidation, uint fee) public {
+    function createOffer(uint heroId, uint liquidation, uint fee) public nonReentrant() {
         require(hero.ownerOf(heroId) == msg.sender);
 
         uint offerId = offers.length;
@@ -97,7 +98,7 @@ contract HeroLending is Initializable, ERC721Holder {
         emit NewOffer(offerId);
     }
 
-    function cancelOffer(uint offerId) public {
+    function cancelOffer(uint offerId) public nonReentrant() {
         require(offers[offerId].owner == msg.sender);
         require(hero.ownerOf(offers[offerId].heroId) == address(this));
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("Open")));
@@ -107,7 +108,7 @@ contract HeroLending is Initializable, ERC721Holder {
         emit CancelOffer(offerId);
     }
 
-    function acceptOffer(uint offerId, uint collateral) public {
+    function acceptOffer(uint offerId, uint collateral) public nonReentrant() {
         require(offers[offerId].owner != msg.sender);
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("Open")));
         uint minimumFee = offers[offerId].dailyFee/24;
@@ -123,7 +124,7 @@ contract HeroLending is Initializable, ERC721Holder {
         emit AcceptOffer(offerId);
     }
 
-    function repayOffer(uint offerId) public {
+    function repayOffer(uint offerId) public nonReentrant() {
         require(offers[offerId].borrower == msg.sender);
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")));
         require(hero.ownerOf(offers[offerId].heroId) == msg.sender);
@@ -151,7 +152,7 @@ contract HeroLending is Initializable, ERC721Holder {
         emit RepayOffer(offerId);
     }
 
-    function addCollateral(uint offerId, uint extraCollateral) public {
+    function addCollateral(uint offerId, uint extraCollateral) public nonReentrant() {
         require(offers[offerId].borrower == msg.sender);
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")));
         require(jewel.balanceOf(address(this)) >= extraCollateral);
@@ -160,7 +161,7 @@ contract HeroLending is Initializable, ERC721Holder {
         jewel.transferFrom(msg.sender, address(this), extraCollateral);
     }
 
-    function liquidate(uint offerId) public {
+    function liquidate(uint offerId) public nonReentrant() {
         uint feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*60*24))*offers[offerId].dailyFee;
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")));
         require(offers[offerId].collateral < (feeToPay + offers[offerId].liquidation));
