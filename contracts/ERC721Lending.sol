@@ -10,21 +10,26 @@ import "../node_modules/@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.
 import "../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../node_modules/@openzeppelin/contracts/access/AccessControl.sol";
 
+
+/**
+ * @title ERC721Lending
+ * @notice ERC721 Lending plataform where users that provide the ERC721 token
+ * set a liquidation limit and fee, and users that borrow the ERC721 token
+ * set how much collateral they add to the transaction
+ */
 contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
 
-    event OfferStatusChange(uint offerId, string status);
+    event OfferStatusChange(uint256 offerId, string status);
 
     struct Offer {
         address owner;
         address nft;
-        uint nftId;
-        uint liquidation;
-        uint dailyFee;
-
+        uint256 nftId;
+        uint256 liquidation;
+        uint256 dailyFee;
         address borrower;
-        uint collateral;
-        uint acceptTime;
-
+        uint256 collateral;
+        uint256 acceptTime;
         string status; // Open, On, Cancelled, Liquidated
     }
 
@@ -43,24 +48,38 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function getOffer(uint offerId) external view returns (address, address, uint, uint, uint, address, uint, uint, string memory) {
+    /**
+     * @dev Returns the details for a offer.
+     * @param offerId The id of the offer.
+     */
+    function getOffer(uint256 offerId) external view returns (address, address, uint256, uint256, uint256, address, uint256, uint256, string memory) {
         Offer memory offer = offers[offerId];
         return (offer.owner, offer.nft, offer.nftId, offer.liquidation, offer.dailyFee, offer.borrower, offer.collateral, offer.acceptTime, offer.status);
     }
 
-    function getOffersOfAddress(address addr) external view returns (uint[] memory) {
+    /**
+     * @dev Returns all offers of an address.
+     * @param addr the address to lookup.
+     */
+    function getOffersOfAddress(address addr) external view returns (uint256[] memory) {
         return addressToOffers[addr];
     }
 
-    function getOfferQuantities() external view returns (uint) {
+    /**
+     * @dev Returns the number of offers made.
+     */
+    function getOfferQuantities() external view returns (uint256) {
         return offerCounter.current();
     }
 
-
-    //Main Functions
-
-    function createOffer(uint nftId, address nftAddress, uint liquidation, uint fee) external nonReentrant() {
-        //TODO: Check if NFTAddress belongs to ERC721 compliant token
+    /**
+     * @dev Opens a new Offer, and sends the nft to an escrow.
+     * @param nftId id of the nft to offer.
+     * @param nftAddress address of the nft to offer.
+     * @param liquidation if the amount of liquidation+accumulatedFee is bigger than the collateral, the borrower is liquidated.
+     * @param fee fee amount that accumulates every 24 hours.
+     */
+    function createOffer(uint256 nftId, address nftAddress, uint256 liquidation, uint256 fee) external nonReentrant() {
         require(IERC721(nftAddress).ownerOf(nftId) == msg.sender, "Not the owner of the NFT");
         IERC721(nftAddress).safeTransferFrom(msg.sender, address(this), nftId);
 
@@ -70,7 +89,11 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         emit OfferStatusChange(offerCounter.current(), "Open");
     }
 
-    function cancelOffer(uint offerId) external nonReentrant() {
+    /**
+     * @dev Cancels open offer and returns the nft to the owner.
+     * @param offerId if of the offer.
+     */
+    function cancelOffer(uint256 offerId) external nonReentrant() {
         require(offers[offerId].owner == msg.sender, "Not the owner of the Offer");
         require(IERC721(offers[offerId].nft).ownerOf(offers[offerId].nftId) == address(this), "The Protocol does not have the NFT");
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("Open")), "Offer is not Open");
@@ -80,10 +103,15 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         emit OfferStatusChange(offerId, "Cancelled");
     }
 
-    function acceptOffer(uint offerId, uint collateral) external nonReentrant() {
+    /**
+     * @dev Accepts an Open offer, escrows the collateral on the contract and sends the nft to the borrower.
+     * @param offerId if of the offer.
+     * @param collateral how much collateral the borrowers wants to add to the offer.
+     */
+    function acceptOffer(uint256 offerId, uint256 collateral) external nonReentrant() {
         require(offers[offerId].owner != msg.sender, "Can not accept your own Offer");
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("Open")), "Offer is not Open");
-        uint minimumFee = offers[offerId].dailyFee/24;
+        uint256 minimumFee = offers[offerId].dailyFee/24;
         require(collateral > offers[offerId].liquidation + minimumFee, "Not enough collateral to borrow for more than an hour");
         require(token.balanceOf(msg.sender) >= collateral, "Not enough balance to pay the collateral");
 
@@ -96,13 +124,18 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         emit OfferStatusChange(offerId, "On");
     }
 
-    function repayOffer(uint offerId) external nonReentrant() {
+    /**
+     * @dev checks if borrower is liquidated or not, then transfers the nft to the contract, 
+     * pays the lender, pays the protocol and finally returns the rest of the collateral to the borrower
+     * @param offerId if of the offer.
+     */
+    function repayOffer(uint256 offerId) external nonReentrant() {
         require(offers[offerId].borrower == msg.sender, "Only borrower can repay the Offer");
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")), "Offer is not On");
         require(IERC721(offers[offerId].nft).ownerOf(offers[offerId].nftId) == msg.sender, "Borrower is not owner of the NFT");
         require(token.balanceOf(address(this)) >= offers[offerId].collateral, "Protocol does not have enough to pay the collateral");
         require(offers[offerId].acceptTime != 0, "Accept time = 0");
-        uint feeToPay;
+        uint256 feeToPay;
         //minimum Fee is at least 1 hour
         if ((block.timestamp - offers[offerId].acceptTime) < 60*60) {
             feeToPay = offers[offerId].dailyFee/24;
@@ -112,10 +145,10 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         // User is not liquidated
         require(offers[offerId].collateral > (feeToPay + offers[offerId].liquidation), "Borrower can be Liquidated");
 
+        IERC721(offers[offerId].nft).safeTransferFrom(msg.sender, address(this), offers[offerId].nftId);
         token.transfer(offers[offerId].owner, feeToPay*96/100);
         token.transfer(PayoutAddress, feeToPay*4/100);
         token.transfer(msg.sender, (offers[offerId].collateral - feeToPay));
-        IERC721(offers[offerId].nft).safeTransferFrom(msg.sender, address(this), offers[offerId].nftId);
 
         offers[offerId].borrower = address(0);
         offers[offerId].collateral = 0;
@@ -124,7 +157,12 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         emit OfferStatusChange(offerId, "Open");
     }
 
-    function addCollateral(uint offerId, uint extraCollateral) external nonReentrant() {
+    /**
+     * @dev Adds extra collateral to the position of the borrower.
+     * @param offerId if of the offer.
+     * @param extraCollateral how much extra collateral the borrowers wants to add to the offer.
+     */
+    function addCollateral(uint256 offerId, uint256 extraCollateral) external nonReentrant() {
         require(offers[offerId].borrower == msg.sender, "Only borrower can add collateral");
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")), "Offer is not On");
         require(token.balanceOf(offers[offerId].borrower) >= extraCollateral, "Borrower does not have enough to pay the extra collateral");
@@ -133,8 +171,12 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         token.transferFrom(msg.sender, address(this), extraCollateral);
     }
 
-    function liquidate(uint offerId) external nonReentrant() {
-        uint feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*60*24))*offers[offerId].dailyFee;
+    /**
+     * @dev Liquidates the borrower if he owns more than he has collateral.
+     * @param offerId if of the offer.
+     */
+    function liquidate(uint256 offerId) external nonReentrant() {
+        uint256 feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*60*24))*offers[offerId].dailyFee;
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")), "Offer is not On");
         require(offers[offerId].collateral < (feeToPay + offers[offerId].liquidation), "Borrower is not Liquidated");
 
@@ -144,7 +186,12 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         emit OfferStatusChange(offerId, "Liquidated");
     }
 
+    /**
+     * @dev Changes account to send payout.
+     * @param newPayout new address to send payout.
+     */
     function transferPayoutAddress(address newPayout) external onlyRole(DEFAULT_ADMIN_ROLE) {
         PayoutAddress = newPayout;
     }
+
 }
