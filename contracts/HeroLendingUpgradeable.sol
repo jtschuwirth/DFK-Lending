@@ -4,10 +4,11 @@ pragma solidity ^0.8.3;
 
 import "./AbstractHero.sol";
 import "./AbstractJewel.sol";
-import "../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../node_modules/@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "../node_modules/@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "../node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "../node_modules/@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract HeroLending is ERC721Holder, ReentrancyGuard {
+contract HeroLendingUpgradeable is Initializable, ERC721HolderUpgradeable, ReentrancyGuardUpgradeable {
 
     event NewOffer(uint offerId);
     event CancelOffer(uint offerId);
@@ -28,12 +29,16 @@ contract HeroLending is ERC721Holder, ReentrancyGuard {
         string status;
     }
 
+    address HeroAddress;
+    address JewelAddress;
     address PayOutAddress;
     Offer[] public offers;
     AbstractHero hero;
     AbstractJewel jewel;
 
-    constructor(address JewelAddress, address HeroAddress) {
+    function initialize() initializer public {
+        HeroAddress = 0xCF88D09658dD442E6FA1d721C2d783a8199B8c06;
+        JewelAddress = 0xAc8578b232f08b6FeC672adCe63987f5c57c0249;
         PayOutAddress = 0x867df63D1eEAEF93984250f78B4bd83C70652dcE;
         hero = AbstractHero(HeroAddress);
         jewel = AbstractJewel(JewelAddress);

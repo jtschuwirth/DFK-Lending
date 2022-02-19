@@ -1,8 +1,8 @@
 {
   "manifestVersion": "3.2",
   "admin": {
-    "address": "0x7b027aef7fEa7657C9b751f09411d208ab26C4CC",
-    "txHash": "0x48ad7f028d9b209cea3bb6117236dbaa0caf8e298848ce763c2476f3a1c55a46"
+    "address": "0xf25186B5081Ff5cE73482AD761DB0eB0d25abfBF",
+    "txHash": "0x7471f0538aea94dfe3bbd6007986734093223ede25630382f2f0d7ed4a848964"
   },
   "proxies": [
     {
@@ -23,6 +23,21 @@
     {
       "address": "0xA768Bd3A7B6f798D7Ab96757a0375fa2159B8E69",
       "txHash": "0x3ad8f2851a11eccdd8ac1864b565ed597230336b0ad31447ec7333dd0d0b0c00",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x84D9ba7bF0ca53fF1B47810e1A93C39D3AB36418",
+      "txHash": "0x993caa18fe4248f7092aa19c50a3aa61666945565b1fa333cd98415b20459cb5",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x281bbE0947cc846dA892A715dDaF64186f5D5ba9",
+      "txHash": "0xd1d487a85e7e83840319e483cc7bb5237246d736620d246fe6a3433868ddd455",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x8f0483125FCb9aaAEFA9209D8E9d7b9C8B9Fb90F",
+      "txHash": "0x022aba2e7c65979f1a7f6d9797491a4df6d87954903800377a19668bb0680d6a",
       "kind": "transparent"
     }
   ],
@@ -484,6 +499,146 @@
           },
           "t_contract(AbstractJewel)11": {
             "label": "contract AbstractJewel"
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        }
+      }
+    },
+    "c8bbfd3f2d981274cbb07a772bf887ea5afd5742c101461c576690c35067aef6": {
+      "address": "0x345cA3e014Aaf5dcA488057592ee47305D9B3e10",
+      "txHash": "0x555fddb7c5f3e4b942b04ea5eae47074fd0d111fc282abce6504f32f72b15b54",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "..\\project:\\node_modules\\@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:39"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "..\\project:\\node_modules\\@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:44"
+          },
+          {
+            "contract": "ERC721HolderUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "..\\project:\\node_modules\\@openzeppelin\\contracts-upgradeable\\token\\ERC721\\utils\\ERC721HolderUpgradeable.sol:40"
+          },
+          {
+            "contract": "ReentrancyGuardUpgradeable",
+            "label": "_status",
+            "type": "t_uint256",
+            "src": "..\\project:\\node_modules\\@openzeppelin\\contracts-upgradeable\\security\\ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "contract": "ReentrancyGuardUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "..\\project:\\node_modules\\@openzeppelin\\contracts-upgradeable\\security\\ReentrancyGuardUpgradeable.sol:74"
+          },
+          {
+            "contract": "HeroLendingUpgradeable",
+            "label": "HeroAddress",
+            "type": "t_address",
+            "src": "..\\project:\\contracts\\HeroLendingUpgradeable.sol:32"
+          },
+          {
+            "contract": "HeroLendingUpgradeable",
+            "label": "JewelAddress",
+            "type": "t_address",
+            "src": "..\\project:\\contracts\\HeroLendingUpgradeable.sol:33"
+          },
+          {
+            "contract": "HeroLendingUpgradeable",
+            "label": "PayOutAddress",
+            "type": "t_address",
+            "src": "..\\project:\\contracts\\HeroLendingUpgradeable.sol:34"
+          },
+          {
+            "contract": "HeroLendingUpgradeable",
+            "label": "offers",
+            "type": "t_array(t_struct(Offer)1020_storage)dyn_storage",
+            "src": "..\\project:\\contracts\\HeroLendingUpgradeable.sol:35"
+          },
+          {
+            "contract": "HeroLendingUpgradeable",
+            "label": "hero",
+            "type": "t_contract(AbstractHero)5",
+            "src": "..\\project:\\contracts\\HeroLendingUpgradeable.sol:36"
+          },
+          {
+            "contract": "HeroLendingUpgradeable",
+            "label": "jewel",
+            "type": "t_contract(AbstractJewel)11",
+            "src": "..\\project:\\contracts\\HeroLendingUpgradeable.sol:37"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address"
+          },
+          "t_array(t_struct(Offer)1020_storage)dyn_storage": {
+            "label": "struct HeroLendingUpgradeable.Offer[]"
+          },
+          "t_struct(Offer)1020_storage": {
+            "label": "struct HeroLendingUpgradeable.Offer",
+            "members": [
+              {
+                "label": "owner",
+                "type": "t_address"
+              },
+              {
+                "label": "heroId",
+                "type": "t_uint256"
+              },
+              {
+                "label": "liquidation",
+                "type": "t_uint256"
+              },
+              {
+                "label": "dailyFee",
+                "type": "t_uint256"
+              },
+              {
+                "label": "borrower",
+                "type": "t_address"
+              },
+              {
+                "label": "collateral",
+                "type": "t_uint256"
+              },
+              {
+                "label": "acceptTime",
+                "type": "t_uint256"
+              },
+              {
+                "label": "status",
+                "type": "t_string_storage"
+              }
+            ]
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_string_storage": {
+            "label": "string"
+          },
+          "t_contract(AbstractHero)5": {
+            "label": "contract AbstractHero"
+          },
+          "t_contract(AbstractJewel)11": {
+            "label": "contract AbstractJewel"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
           },
           "t_bool": {
             "label": "bool"
