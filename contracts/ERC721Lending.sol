@@ -5,10 +5,12 @@ pragma solidity ^0.8.3;
 import "../node_modules/@openzeppelin/contracts/utils/Counters.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../node_modules/@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
-contract ERC721Lending is ERC721Holder, ReentrancyGuard {
+import "../node_modules/@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../node_modules/@openzeppelin/contracts/access/AccessControl.sol";
+
+contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
 
     event OfferStatusChange(uint offerId, string status);
 
@@ -32,52 +34,53 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard {
     using Counters for Counters.Counter;
     Counters.Counter private offerCounter;
 
-    address PayOutAddress;
+    address PayoutAddress;
     IERC20 token;
 
-    constructor(address PayOut, address TokenAddress) {
-        PayOutAddress = PayOut;
+    constructor(address Payout, address TokenAddress) {
+        PayoutAddress = Payout;
         token = IERC20(TokenAddress);
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function getOffer(uint offerId) public view returns (address, address, uint, uint, uint, address, uint, uint, string memory) {
+    function getOffer(uint offerId) external view returns (address, address, uint, uint, uint, address, uint, uint, string memory) {
         Offer memory offer = offers[offerId];
         return (offer.owner, offer.nft, offer.nftId, offer.liquidation, offer.dailyFee, offer.borrower, offer.collateral, offer.acceptTime, offer.status);
     }
 
-    function getOffersOfAddress(address addr) public view returns (uint[] memory) {
+    function getOffersOfAddress(address addr) external view returns (uint[] memory) {
         return addressToOffers[addr];
     }
 
-    function getOfferQuantities() public view returns (uint) {
+    function getOfferQuantities() external view returns (uint) {
         return offerCounter.current();
     }
 
 
     //Main Functions
 
-    function createOffer(uint nftId, address nftAddress, uint liquidation, uint fee) public nonReentrant() {
+    function createOffer(uint nftId, address nftAddress, uint liquidation, uint fee) external nonReentrant() {
         //TODO: Check if NFTAddress belongs to ERC721 compliant token
         require(IERC721(nftAddress).ownerOf(nftId) == msg.sender, "Not the owner of the NFT");
+        IERC721(nftAddress).safeTransferFrom(msg.sender, address(this), nftId);
 
         offerCounter.increment();
         offers[offerCounter.current()] = Offer(msg.sender, nftAddress, nftId, liquidation, fee, address(0), 0, 0, "Open");
         addressToOffers[msg.sender].push(offerCounter.current());
-        IERC721(nftAddress).safeTransferFrom(msg.sender, address(this), nftId);
         emit OfferStatusChange(offerCounter.current(), "Open");
     }
 
-    function cancelOffer(uint offerId) public nonReentrant() {
+    function cancelOffer(uint offerId) external nonReentrant() {
         require(offers[offerId].owner == msg.sender, "Not the owner of the Offer");
         require(IERC721(offers[offerId].nft).ownerOf(offers[offerId].nftId) == address(this), "The Protocol does not have the NFT");
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("Open")), "Offer is not Open");
 
         offers[offerId].status = "Cancelled";
         IERC721(offers[offerId].nft).safeTransferFrom(address(this), msg.sender, offers[offerId].nftId);
-        emit OfferStatusChange(offerCounter.current(), "Cancelled");
+        emit OfferStatusChange(offerId, "Cancelled");
     }
 
-    function acceptOffer(uint offerId, uint collateral) public nonReentrant() {
+    function acceptOffer(uint offerId, uint collateral) external nonReentrant() {
         require(offers[offerId].owner != msg.sender, "Can not accept your own Offer");
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("Open")), "Offer is not Open");
         uint minimumFee = offers[offerId].dailyFee/24;
@@ -90,10 +93,10 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard {
         offers[offerId].acceptTime = block.timestamp;
         token.transferFrom(msg.sender, address(this), collateral);
         IERC721(offers[offerId].nft).safeTransferFrom(address(this), msg.sender, offers[offerId].nftId);
-        emit OfferStatusChange(offerCounter.current(), "On");
+        emit OfferStatusChange(offerId, "On");
     }
 
-    function repayOffer(uint offerId) public nonReentrant() {
+    function repayOffer(uint offerId) external nonReentrant() {
         require(offers[offerId].borrower == msg.sender, "Only borrower can repay the Offer");
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")), "Offer is not On");
         require(IERC721(offers[offerId].nft).ownerOf(offers[offerId].nftId) == msg.sender, "Borrower is not owner of the NFT");
@@ -110,7 +113,7 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard {
         require(offers[offerId].collateral > (feeToPay + offers[offerId].liquidation), "Borrower can be Liquidated");
 
         token.transfer(offers[offerId].owner, feeToPay*96/100);
-        token.transfer(PayOutAddress, feeToPay*4/100);
+        token.transfer(PayoutAddress, feeToPay*4/100);
         token.transfer(msg.sender, (offers[offerId].collateral - feeToPay));
         IERC721(offers[offerId].nft).safeTransferFrom(msg.sender, address(this), offers[offerId].nftId);
 
@@ -118,10 +121,10 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard {
         offers[offerId].collateral = 0;
         offers[offerId].acceptTime = 0;
         offers[offerId].status = "Open";
-        emit OfferStatusChange(offerCounter.current(), "Open");
+        emit OfferStatusChange(offerId, "Open");
     }
 
-    function addCollateral(uint offerId, uint extraCollateral) public nonReentrant() {
+    function addCollateral(uint offerId, uint extraCollateral) external nonReentrant() {
         require(offers[offerId].borrower == msg.sender, "Only borrower can add collateral");
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")), "Offer is not On");
         require(token.balanceOf(offers[offerId].borrower) >= extraCollateral, "Borrower does not have enough to pay the extra collateral");
@@ -130,14 +133,18 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard {
         token.transferFrom(msg.sender, address(this), extraCollateral);
     }
 
-    function liquidate(uint offerId) public nonReentrant() {
+    function liquidate(uint offerId) external nonReentrant() {
         uint feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*60*24))*offers[offerId].dailyFee;
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")), "Offer is not On");
         require(offers[offerId].collateral < (feeToPay + offers[offerId].liquidation), "Borrower is not Liquidated");
 
         offers[offerId].status = "Liquidated";
         token.transfer(offers[offerId].owner, offers[offerId].collateral*90/100);
-        token.transfer(PayOutAddress, offers[offerId].collateral*10/100);
-        emit OfferStatusChange(offerCounter.current(), "Liquidated");
+        token.transfer(PayoutAddress, offers[offerId].collateral*10/100);
+        emit OfferStatusChange(offerId, "Liquidated");
+    }
+
+    function transferPayoutAddress(address newPayout) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        PayoutAddress = newPayout;
     }
 }

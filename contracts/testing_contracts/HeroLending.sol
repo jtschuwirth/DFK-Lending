@@ -2,13 +2,12 @@
 
 pragma solidity ^0.8.3;
 
-import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../node_modules/@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "../node_modules/@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "../node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "../node_modules/@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "../../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../../node_modules/@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "../../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../../node_modules/@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
-contract HeroLendingUpgradeable is Initializable, ERC721HolderUpgradeable, ReentrancyGuardUpgradeable {
+contract HeroLending is ERC721Holder, ReentrancyGuard {
 
     event NewOffer(uint offerId);
     event CancelOffer(uint offerId);
@@ -29,16 +28,12 @@ contract HeroLendingUpgradeable is Initializable, ERC721HolderUpgradeable, Reent
         string status;
     }
 
-    address HeroAddress;
-    address JewelAddress;
     address PayOutAddress;
     Offer[] public offers;
     IERC721 hero;
     IERC20 jewel;
 
-    function initialize() initializer public {
-        HeroAddress = 0xCF88D09658dD442E6FA1d721C2d783a8199B8c06;
-        JewelAddress = 0xAc8578b232f08b6FeC672adCe63987f5c57c0249;
+    constructor(address JewelAddress, address HeroAddress) {
         PayOutAddress = 0x867df63D1eEAEF93984250f78B4bd83C70652dcE;
         hero = IERC721(HeroAddress);
         jewel = IERC20(JewelAddress);
