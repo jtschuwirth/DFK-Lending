@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.3;
 
-import "./AbstractHero.sol";
-import "./AbstractJewel.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
@@ -30,13 +30,13 @@ contract HeroLending is ERC721Holder, ReentrancyGuard {
 
     address PayOutAddress;
     Offer[] public offers;
-    AbstractHero hero;
-    AbstractJewel jewel;
+    IERC721 hero;
+    IERC20 jewel;
 
     constructor(address JewelAddress, address HeroAddress) {
         PayOutAddress = 0x867df63D1eEAEF93984250f78B4bd83C70652dcE;
-        hero = AbstractHero(HeroAddress);
-        jewel = AbstractJewel(JewelAddress);
+        hero = IERC721(HeroAddress);
+        jewel = IERC20(JewelAddress);
     }
 
     //View Functions

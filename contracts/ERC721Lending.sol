@@ -4,11 +4,10 @@ pragma solidity ^0.8.3;
 
 import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "../node_modules/@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "../node_modules/@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "../node_modules/@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
-contract HeroLendingUpgradeable is Initializable, ERC721HolderUpgradeable, ReentrancyGuardUpgradeable {
+contract ERC721Lending is ERC721Holder, ReentrancyGuard {
 
     event NewOffer(uint offerId);
     event CancelOffer(uint offerId);
@@ -18,7 +17,8 @@ contract HeroLendingUpgradeable is Initializable, ERC721HolderUpgradeable, Reent
 
     struct Offer {
         address owner;
-        uint heroId;
+        address nft;
+        uint nftId;
         uint liquidation;
         uint dailyFee;
 
@@ -29,19 +29,13 @@ contract HeroLendingUpgradeable is Initializable, ERC721HolderUpgradeable, Reent
         string status;
     }
 
-    address HeroAddress;
-    address JewelAddress;
     address PayOutAddress;
     Offer[] public offers;
-    IERC721 hero;
-    IERC20 jewel;
+    IERC20 token;
 
-    function initialize() initializer public {
-        HeroAddress = 0xCF88D09658dD442E6FA1d721C2d783a8199B8c06;
-        JewelAddress = 0xAc8578b232f08b6FeC672adCe63987f5c57c0249;
-        PayOutAddress = 0x867df63D1eEAEF93984250f78B4bd83C70652dcE;
-        hero = IERC721(HeroAddress);
-        jewel = IERC20(JewelAddress);
+    constructor(address PayOut, address TokenAddress) {
+        PayOutAddress = PayOut;
+        token = IERC20(TokenAddress);
     }
 
     //View Functions
@@ -50,8 +44,12 @@ contract HeroLendingUpgradeable is Initializable, ERC721HolderUpgradeable, Reent
         return offers[offerId].owner;
     }
 
-    function offerHeroId(uint offerId) public view returns (uint) {
-        return offers[offerId].heroId;
+    function offerNFT(uint offerId) public view returns (address) {
+        return offers[offerId].nft;
+    }
+
+    function offerNFTId(uint offerId) public view returns (uint) {
+        return offers[offerId].nftId;
     }
 
     function offerLiquidation(uint offerId) public view returns (uint) {
@@ -89,22 +87,22 @@ contract HeroLendingUpgradeable is Initializable, ERC721HolderUpgradeable, Reent
 
     //Main Functions
 
-    function createOffer(uint heroId, uint liquidation, uint fee) public nonReentrant() {
-        require(hero.ownerOf(heroId) == msg.sender);
+    function createOffer(uint nftId, address NFTAddress, uint liquidation, uint fee) public nonReentrant() {
+        require(IERC721(NFTAddress).ownerOf(nftId) == msg.sender);
 
         uint offerId = offers.length;
-        offers.push(Offer(msg.sender, heroId, liquidation, fee, address(0), 0, 0, "Open"));
-        hero.safeTransferFrom(msg.sender, address(this), heroId);
+        offers.push(Offer(msg.sender, NFTAddress, nftId, liquidation, fee, address(0), 0, 0, "Open"));
+        IERC721(NFTAddress).safeTransferFrom(msg.sender, address(this), nftId);
         emit NewOffer(offerId);
     }
 
     function cancelOffer(uint offerId) public nonReentrant() {
         require(offers[offerId].owner == msg.sender);
-        require(hero.ownerOf(offers[offerId].heroId) == address(this));
+        require(IERC721(offers[offerId].nft).ownerOf(offers[offerId].nftId) == address(this));
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("Open")));
 
         offers[offerId].status = "Cancelled";
-        hero.safeTransferFrom(address(this), msg.sender, offers[offerId].heroId);
+        IERC721(offers[offerId].nft).safeTransferFrom(address(this), msg.sender, offers[offerId].nftId);
         emit CancelOffer(offerId);
     }
 
@@ -113,22 +111,22 @@ contract HeroLendingUpgradeable is Initializable, ERC721HolderUpgradeable, Reent
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("Open")));
         uint minimumFee = offers[offerId].dailyFee/24;
         require(collateral > offers[offerId].liquidation + minimumFee);
-        require(jewel.balanceOf(msg.sender) >= collateral);
+        require(token.balanceOf(msg.sender) >= collateral);
 
         offers[offerId].status = "On";
         offers[offerId].borrower = msg.sender;
         offers[offerId].collateral = collateral;
         offers[offerId].acceptTime = block.timestamp;
-        jewel.transferFrom(msg.sender, address(this), collateral);
-        hero.safeTransferFrom(address(this), msg.sender, offers[offerId].heroId);
+        token.transferFrom(msg.sender, address(this), collateral);
+        IERC721(offers[offerId].nft).safeTransferFrom(address(this), msg.sender, offers[offerId].nftId);
         emit AcceptOffer(offerId);
     }
 
     function repayOffer(uint offerId) public nonReentrant() {
         require(offers[offerId].borrower == msg.sender);
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")));
-        require(hero.ownerOf(offers[offerId].heroId) == msg.sender);
-        require(jewel.balanceOf(address(this)) >= offers[offerId].collateral);
+        require(IERC721(offers[offerId].nft).ownerOf(offers[offerId].nftId) == msg.sender);
+        require(token.balanceOf(address(this)) >= offers[offerId].collateral);
         require(offers[offerId].acceptTime != 0);
         uint feeToPay;
         //minimum Fee is at least 1 hour
@@ -140,10 +138,10 @@ contract HeroLendingUpgradeable is Initializable, ERC721HolderUpgradeable, Reent
         // User is not liquidated
         require(offers[offerId].collateral > (feeToPay + offers[offerId].liquidation));
 
-        jewel.transfer(offers[offerId].owner, feeToPay*96/100);
-        jewel.transfer(PayOutAddress, feeToPay*4/100);
-        jewel.transfer(msg.sender, (offers[offerId].collateral - feeToPay));
-        hero.safeTransferFrom(msg.sender, address(this), offers[offerId].heroId);
+        token.transfer(offers[offerId].owner, feeToPay*96/100);
+        token.transfer(PayOutAddress, feeToPay*4/100);
+        token.transfer(msg.sender, (offers[offerId].collateral - feeToPay));
+        IERC721(offers[offerId].nft).safeTransferFrom(msg.sender, address(this), offers[offerId].nftId);
 
         offers[offerId].borrower = address(0);
         offers[offerId].collateral = 0;
@@ -155,10 +153,10 @@ contract HeroLendingUpgradeable is Initializable, ERC721HolderUpgradeable, Reent
     function addCollateral(uint offerId, uint extraCollateral) public nonReentrant() {
         require(offers[offerId].borrower == msg.sender);
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")));
-        require(jewel.balanceOf(address(this)) >= extraCollateral);
+        require(token.balanceOf(address(this)) >= extraCollateral);
 
         offers[offerId].collateral = offers[offerId].collateral + extraCollateral;
-        jewel.transferFrom(msg.sender, address(this), extraCollateral);
+        token.transferFrom(msg.sender, address(this), extraCollateral);
     }
 
     function liquidate(uint offerId) public nonReentrant() {
@@ -167,8 +165,8 @@ contract HeroLendingUpgradeable is Initializable, ERC721HolderUpgradeable, Reent
         require(offers[offerId].collateral < (feeToPay + offers[offerId].liquidation));
 
         offers[offerId].status = "Liquidated";
-        jewel.transfer(offers[offerId].owner, offers[offerId].collateral*90/100);
-        jewel.transfer(PayOutAddress, offers[offerId].collateral*10/100);
+        token.transfer(offers[offerId].owner, offers[offerId].collateral*90/100);
+        token.transfer(PayOutAddress, offers[offerId].collateral*10/100);
         emit Liquidate(offerId);
     }
 }
