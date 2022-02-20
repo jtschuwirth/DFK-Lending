@@ -95,7 +95,7 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
 
     /**
      * @dev Cancels open offer and returns the nft to the owner.
-     * @param offerId if of the offer.
+     * @param offerId the id of the offer.
      */
     function cancelOffer(uint256 offerId) external nonReentrant() {
         require(offers[offerId].owner == msg.sender, "Not the owner of the Offer");
@@ -109,7 +109,7 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
 
     /**
      * @dev Accepts an Open offer, escrows the collateral on the contract and sends the nft to the borrower.
-     * @param offerId if of the offer.
+     * @param offerId the id of the offer.
      * @param collateral how much collateral the borrowers wants to add to the offer.
      */
     function acceptOffer(uint256 offerId, uint256 collateral) external nonReentrant() {
@@ -131,7 +131,7 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
     /**
      * @dev checks if borrower is liquidated or not, then transfers the nft to the contract, 
      * pays the lender, pays the protocol and finally returns the rest of the collateral to the borrower
-     * @param offerId if of the offer.
+     * @param offerId the id of the offer.
      */
     function repayOffer(uint256 offerId) external nonReentrant() {
         require(offers[offerId].borrower == msg.sender, "Only borrower can repay the Offer");
@@ -163,7 +163,7 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
 
     /**
      * @dev Adds extra collateral to the position of the borrower.
-     * @param offerId if of the offer.
+     * @param offerId the id of the offer.
      * @param extraCollateral how much extra collateral the borrowers wants to add to the offer.
      */
     function addCollateral(uint256 offerId, uint256 extraCollateral) external nonReentrant() {
@@ -177,7 +177,7 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
 
     /**
      * @dev Liquidates the borrower if he owns more than he has collateral.
-     * @param offerId if of the offer.
+     * @param offerId the id of the offer.
      */
     function liquidate(uint256 offerId) external nonReentrant() {
         uint256 feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*60*24))*offers[offerId].dailyFee;
