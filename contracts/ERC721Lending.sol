@@ -41,10 +41,14 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
 
     address PayoutAddress;
     IERC20 token;
+    uint Fee;
+    uint LiquidationFee;
 
     constructor(address Payout, address TokenAddress) {
         PayoutAddress = Payout;
         token = IERC20(TokenAddress);
+        Fee = 4;
+        LiquidationFee = 10;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -146,8 +150,8 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         require(offers[offerId].collateral > (feeToPay + offers[offerId].liquidation), "Borrower can be Liquidated");
 
         IERC721(offers[offerId].nft).safeTransferFrom(msg.sender, address(this), offers[offerId].nftId);
-        token.transfer(offers[offerId].owner, feeToPay*96/100);
-        token.transfer(PayoutAddress, feeToPay*4/100);
+        token.transfer(offers[offerId].owner, feeToPay*(100-Fee)/100);
+        token.transfer(PayoutAddress, feeToPay*Fee/100);
         token.transfer(msg.sender, (offers[offerId].collateral - feeToPay));
 
         offers[offerId].borrower = address(0);
@@ -181,8 +185,8 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         require(offers[offerId].collateral < (feeToPay + offers[offerId].liquidation), "Borrower is not Liquidated");
 
         offers[offerId].status = "Liquidated";
-        token.transfer(offers[offerId].owner, offers[offerId].collateral*90/100);
-        token.transfer(PayoutAddress, offers[offerId].collateral*10/100);
+        token.transfer(offers[offerId].owner, offers[offerId].collateral*(100-LiquidationFee)/100);
+        token.transfer(PayoutAddress, offers[offerId].collateral*LiquidationFee/100);
         emit OfferStatusChange(offerId, "Liquidated");
     }
 
@@ -192,6 +196,22 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
      */
     function transferPayoutAddress(address newPayout) external onlyRole(DEFAULT_ADMIN_ROLE) {
         PayoutAddress = newPayout;
+    }
+
+    /**
+     * @dev Changes the fee 
+     * @param newFee new fee.
+     */
+    function changeFee(uint256 newFee) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        Fee = newFee;
+    }
+
+    /**
+     * @dev Changes the liquidation fee
+     * @param newLiquidationFee new liquidation fee.
+     */
+    function changeLiquidationFee(uint256 newLiquidationFee) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        LiquidationFee = newLiquidationFee;
     }
 
 }
