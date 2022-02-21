@@ -35,6 +35,7 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
 
     mapping(uint256 => Offer) offers;
     mapping(address => uint256[]) addressToOffers;
+    mapping(address => bool) addressToBool;
 
     using Counters for Counters.Counter;
     Counters.Counter private offerCounter;
@@ -44,11 +45,13 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
     uint Fee;
     uint LiquidationFee;
 
-    constructor(address Payout, address TokenAddress) {
+    constructor(address Payout, address TokenAddress, address BaseContract) {
         PayoutAddress = Payout;
         token = IERC20(TokenAddress);
         Fee = 4;
         LiquidationFee = 10;
+        //Base Contract accepted
+        addressToBool[BaseContract] = true;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -81,9 +84,10 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
      * @param nftId id of the nft to offer.
      * @param nftAddress address of the nft to offer.
      * @param liquidation if the amount of liquidation+accumulatedFee is bigger than the collateral, the borrower is liquidated.
-     * @param fee fee amount that accumulates every 24 hours.
+     * @param fee fee amount that accumulates every hour.
      */
     function createOffer(uint256 nftId, address nftAddress, uint256 liquidation, uint256 fee) external nonReentrant() {
+        require(addressToBool[nftAddress] == true);
         require(IERC721(nftAddress).ownerOf(nftId) == msg.sender, "Not the owner of the NFT");
         IERC721(nftAddress).safeTransferFrom(msg.sender, address(this), nftId);
 
@@ -207,6 +211,22 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
      */
     function changeLiquidationFee(uint256 newLiquidationFee) external onlyRole(DEFAULT_ADMIN_ROLE) {
         LiquidationFee = newLiquidationFee;
+    }
+
+    /**
+     * @dev adds new contract of ERC721 to the protocol
+     * @param _contract new nft contract to use on the protocol.
+     */
+    function addContract(address _contract) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        addressToBool[_contract] = true;
+    }
+
+    /**
+     * @dev removes a contract of ERC721 to the protocol
+     * @param _contract new nft contract to use on the protocol.
+     */
+    function removeContract(address _contract) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        addressToBool[_contract] = false;
     }
 
 }
