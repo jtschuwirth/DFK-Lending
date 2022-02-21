@@ -139,13 +139,8 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         require(IERC721(offers[offerId].nft).ownerOf(offers[offerId].nftId) == msg.sender, "Borrower is not owner of the NFT");
         require(token.balanceOf(address(this)) >= offers[offerId].collateral, "Protocol does not have enough to pay the collateral");
         require(offers[offerId].acceptTime != 0, "Accept time = 0");
-        uint256 feeToPay;
-        //minimum Fee is at least 1 hour
-        if ((block.timestamp - offers[offerId].acceptTime) < 60*60) {
-            feeToPay = offers[offerId].hourlyFee;
-        } else {
-            feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*60))*offers[offerId].hourlyFee;
-        }
+        //minimum Fee is at least 1 hour and increases each hour
+        uint256 feeToPay = offers[offerId].hourlyFee + ((block.timestamp - offers[offerId].acceptTime)/(60*60))*offers[offerId].hourlyFee;
         // User is not liquidated
         require(offers[offerId].collateral > (feeToPay + offers[offerId].liquidation), "Borrower can be Liquidated");
 
@@ -180,7 +175,7 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
      * @param offerId the id of the offer.
      */
     function liquidate(uint256 offerId) external nonReentrant() {
-        uint256 feeToPay = ((block.timestamp - offers[offerId].acceptTime)/(60*60))*offers[offerId].hourlyFee;
+        uint256 feeToPay = offers[offerId].hourlyFee + ((block.timestamp - offers[offerId].acceptTime)/(60*60))*offers[offerId].hourlyFee;
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")), "Offer is not On");
         require(offers[offerId].collateral < (feeToPay + offers[offerId].liquidation), "Borrower is not Liquidated");
 

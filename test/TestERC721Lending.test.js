@@ -44,10 +44,14 @@ contract("Testing", (accounts) => {
     })
     
     it("account[0] can create an offer for his NFT with id=0", async () => {
-        const approve = await BasicERC721Contract.approve(ERC721LendingContract.address, 0, {from: alice});
+        let liquidation = 50;
+        let hourlyFee = 1;
+        let nftId = 0;
+
+        const approve = await BasicERC721Contract.approve(ERC721LendingContract.address, nftId, {from: alice});
         assert.equal(approve.receipt.status, true);
-        const lend = await ERC721LendingContract.createOffer(0, BasicERC721Contract.address, 50, 1, {from: alice});
-        const owner = await BasicERC721Contract.ownerOf(0, {from: alice});
+        const lend = await ERC721LendingContract.createOffer(nftId, BasicERC721Contract.address, liquidation, hourlyFee, {from: alice});
+        const owner = await BasicERC721Contract.ownerOf(nftId, {from: alice});
         const offerData = await ERC721LendingContract.getOffer(1, {from: alice});
        
         assert.equal(lend.receipt.status, true);
@@ -57,13 +61,18 @@ contract("Testing", (accounts) => {
 
 
     it("account[1] can borrow the offer with id=1 with 60 collateral", async () => {
+        let collateral = 60;
+        let offerId = 1;
+        let nftId = 0;
+
         const approve = await BasicERC20Contract.approve(ERC721LendingContract.address, 10000000, {from:bob});
         assert.equal(approve.receipt.status, true);
-        const borrow = await ERC721LendingContract.acceptOffer(1, 60, {from: bob});
-        const owner = await BasicERC721Contract.ownerOf(0, {from: bob});
-        const offerData = await ERC721LendingContract.getOffer(1, {from: bob});
+        const borrow = await ERC721LendingContract.acceptOffer(offerId, collateral, {from: bob});
+        const owner = await BasicERC721Contract.ownerOf(nftId, {from: bob});
+        const offerData = await ERC721LendingContract.getOffer(offerId, {from: bob});
         const finalBalance = await BasicERC20Contract.balanceOf(bob, {from: bob});
-        
+         
+        //expectEvent(borrow, 'Transfer', { from: bob, to: ERC721LendingContract.address, amount: collateral});
         assert.equal(borrow.receipt.status, true);
         assert.equal(owner, bob);
         assert.equal(offerData[8], "On");
@@ -77,6 +86,7 @@ contract("Testing", (accounts) => {
         const offerData = await ERC721LendingContract.getOffer(1, {from: bob});
         const finalBalance = await BasicERC20Contract.balanceOf(bob, {from: bob});
         
+        //expectEvent(repay, 'Transfer', { from: ERC721LendingContract.address, to: alice});
         assert.equal(owner, ERC721LendingContract.address);
         assert.equal(repay.receipt.status, true);
         assert.equal(offerData[8], "Open");
@@ -112,7 +122,8 @@ contract("Testing", (accounts) => {
         const liquidate = await ERC721LendingContract.liquidate(2, {from: alice});
         const owner = await BasicERC721Contract.ownerOf(1, {from: alice});
         const offerData = await ERC721LendingContract.getOffer(2, {from: bob});
-        
+
+        //expectEvent(liquidate, 'Transfer', { from: ERC721LendingContract.address, to: alice});
         assert.equal(liquidate.receipt.status, true);
         assert.equal(owner, bob);
         assert.equal(offerData[8], "Liquidated");
