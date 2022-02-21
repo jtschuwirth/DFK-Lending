@@ -46,7 +46,7 @@ contract("Testing", (accounts) => {
     it("account[0] can create an offer for his NFT with id=0", async () => {
         const approve = await BasicERC721Contract.approve(ERC721LendingContract.address, 0, {from: alice});
         assert.equal(approve.receipt.status, true);
-        const lend = await ERC721LendingContract.createOffer(0, BasicERC721Contract.address, 50, 24, {from: alice});
+        const lend = await ERC721LendingContract.createOffer(0, BasicERC721Contract.address, 50, 1, {from: alice});
         const owner = await BasicERC721Contract.ownerOf(0, {from: alice});
         const offerData = await ERC721LendingContract.getOffer(1, {from: alice});
        
@@ -117,21 +117,6 @@ contract("Testing", (accounts) => {
         assert.equal(owner, bob);
         assert.equal(offerData[8], "Liquidated");
     });
-
-    it("account[1] can not repay the offer with id=2 because is liquidated", async () => {
-        const approve = await BasicERC721Contract.approve(ERC721LendingContract.address, 1, {from:bob});
-        assert.equal(approve.receipt.status, true);
-        const repay = await ERC721LendingContract.repayOffer(2, {from: bob});
-        const owner = await BasicERC721Contract.ownerOf(1, {from: bob});
-        const offerData = await ERC721LendingContract.getOffer(2, {from: bob});
-        const finalBalance = await BasicERC20Contract.balanceOf(bob, {from: bob});
-        
-        assert.equal(owner, bob);
-        assert.equal(repay.receipt.status, false);
-        assert.equal(offerData[8], "Liquidated");
-    });
-
-
 
 
 });
