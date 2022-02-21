@@ -79,6 +79,10 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         return offerCounter.current();
     }
 
+    function feeToPay(uint256 offerId) public view returns (uint256) {
+        return offers[offerId].hourlyFee + ((block.timestamp - offers[offerId].acceptTime)/(60*60))*offers[offerId].hourlyFee;
+    }
+
     /**
      * @dev Opens a new Offer, and sends the nft to an escrow.
      * @param nftId id of the nft to offer.
@@ -144,14 +148,14 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         require(token.balanceOf(address(this)) >= offers[offerId].collateral, "Protocol does not have enough to pay the collateral");
         require(offers[offerId].acceptTime != 0, "Accept time = 0");
         //minimum Fee is at least 1 hour and increases each hour
-        uint256 feeToPay = offers[offerId].hourlyFee + ((block.timestamp - offers[offerId].acceptTime)/(60*60))*offers[offerId].hourlyFee;
+        uint256 fee = feeToPay(offerId);
         // User is not liquidated
-        require(offers[offerId].collateral > (feeToPay + offers[offerId].liquidation), "Borrower can be Liquidated");
+        require(offers[offerId].collateral >= (fee + offers[offerId].liquidation), "Borrower can be Liquidated");
 
         IERC721(offers[offerId].nft).safeTransferFrom(msg.sender, address(this), offers[offerId].nftId);
-        token.transfer(offers[offerId].owner, feeToPay*(100-Fee)/100);
-        token.transfer(PayoutAddress, feeToPay*Fee/100);
-        token.transfer(msg.sender, (offers[offerId].collateral - feeToPay));
+        token.transfer(offers[offerId].owner, fee*(100-Fee)/100);
+        token.transfer(PayoutAddress, fee*Fee/100);
+        token.transfer(msg.sender, (offers[offerId].collateral - fee));
 
         offers[offerId].borrower = address(0);
         offers[offerId].collateral = 0;
@@ -179,9 +183,9 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
      * @param offerId the id of the offer.
      */
     function liquidate(uint256 offerId) external nonReentrant() {
-        uint256 feeToPay = offers[offerId].hourlyFee + ((block.timestamp - offers[offerId].acceptTime)/(60*60))*offers[offerId].hourlyFee;
+        uint256 fee = feeToPay(offerId);
         require(keccak256(abi.encodePacked(offers[offerId].status)) == keccak256(abi.encodePacked("On")), "Offer is not On");
-        require(offers[offerId].collateral < (feeToPay + offers[offerId].liquidation), "Borrower is not Liquidated");
+        require(offers[offerId].collateral < (fee + offers[offerId].liquidation), "Borrower is not Liquidated");
 
         offers[offerId].status = "Liquidated";
         token.transfer(offers[offerId].owner, offers[offerId].collateral*(100-LiquidationFee)/100);
