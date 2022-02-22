@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 
+
 /**
  * @title ERC721Lending
  * @notice ERC721 Lending plataform where users that provide the ERC721 token
@@ -45,13 +46,13 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
     uint Fee;
     uint LiquidationFee;
 
-    constructor(address Payout, address TokenAddress, address BaseContract) {
+    constructor(address Payout, address TokenAddress, address BaseERC721Address) {
         PayoutAddress = Payout;
         token = IERC20(TokenAddress);
         Fee = 4;
         LiquidationFee = 10;
         //Base Contract accepted
-        addressToBool[BaseContract] = true;
+        addressToBool[BaseERC721Address] = true;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -93,12 +94,14 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
     function createOffer(uint256 nftId, address nftAddress, uint256 liquidation, uint256 fee) external nonReentrant() {
         require(addressToBool[nftAddress] == true);
         require(IERC721(nftAddress).ownerOf(nftId) == msg.sender, "Not the owner of the NFT");
+        
         IERC721(nftAddress).safeTransferFrom(msg.sender, address(this), nftId);
 
+        uint current = offerCounter.current();
         offerCounter.increment();
-        offers[offerCounter.current()] = Offer(msg.sender, nftAddress, nftId, liquidation, fee, address(0), 0, 0, "Open");
-        addressToOffers[msg.sender].push(offerCounter.current());
-        emit OfferStatusChange(offerCounter.current(), "Open");
+        offers[current] = Offer(msg.sender, nftAddress, nftId, liquidation, fee, address(0), 0, 0, "Open");
+        addressToOffers[msg.sender].push(current);
+        emit OfferStatusChange(current, "Open");
     }
 
     /**
@@ -218,16 +221,16 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev adds new contract of ERC721 to the protocol
-     * @param _contract new nft contract to use on the protocol.
+     * @dev adds new contract ERC721 to the protocol
+     * @param _contract contract address to whitelist.
      */
     function addContract(address _contract) external onlyRole(DEFAULT_ADMIN_ROLE) {
         addressToBool[_contract] = true;
     }
 
     /**
-     * @dev removes a contract of ERC721 to the protocol
-     * @param _contract new nft contract to use on the protocol.
+     * @dev removes a contract ERC721 from the protocol
+     * @param _contract contract address to blacklist.
      */
     function removeContract(address _contract) external onlyRole(DEFAULT_ADMIN_ROLE) {
         addressToBool[_contract] = false;
