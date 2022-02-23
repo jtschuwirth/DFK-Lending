@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.3;
 
-import "../../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract BasicERC721 is ERC721 {
     constructor() ERC721("ERC721Token", "ERC721") {
