@@ -74,7 +74,6 @@ contract("Testing", (accounts) => {
         const offerData = await ERC721LendingContract.getOffer(offerId, {from: bob});
         const finalBalance = await BasicERC20Contract.balanceOf(bob, {from: bob});
          
-        //expectEvent(borrow, 'Transfer', { from: bob, to: ERC721LendingContract.address, amount: collateral});
         assert.equal(finalBalance.toString(), new BN(40).toString())
         assert.equal(borrow.receipt.status, true);
         assert.equal(owner, bob);
@@ -91,7 +90,6 @@ contract("Testing", (accounts) => {
         const offerData = await ERC721LendingContract.getOffer(offerId, {from: bob});
         const finalBalance = await BasicERC20Contract.balanceOf(bob, {from: bob});
         
-        //expectEvent(repay, 'Transfer', { from: ERC721LendingContract.address, to: alice});
         assert.equal(finalBalance.toString(), new BN(99).toString())
         assert.equal(owner, ERC721LendingContract.address);
         assert.equal(repay.receipt.status, true);
@@ -115,7 +113,7 @@ contract("Testing", (accounts) => {
         assert.equal(offerData[8], "Open");
     });
 
-    it("account[1] can borrow the offer with id=1 with 60 collateral", async () => {
+    it("account[1] can borrow the offer with id=1 with 74 collateral", async () => {
         let collateral = 74;
         let offerId = 1;
         let nftId = 1;
@@ -141,8 +139,8 @@ contract("Testing", (accounts) => {
         const liquidate = await ERC721LendingContract.liquidate(offerId, {from: alice});
         const owner = await BasicERC721Contract.ownerOf(nftId, {from: alice});
         const offerData = await ERC721LendingContract.getOffer(offerId, {from: bob});
+        const finalBalance = await BasicERC20Contract.balanceOf(alice, {from: alice});
 
-        //expectEvent(liquidate, 'Transfer', { from: ERC721LendingContract.address, to: alice});
         assert.equal(liquidate.receipt.status, true);
         assert.equal(owner, bob);
         assert.equal(offerData[8], "Liquidated");
