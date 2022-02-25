@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -38,6 +39,7 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
     mapping(address => uint256[]) addressToOffers;
     mapping(address => bool) addressToBool;
 
+    using SafeERC20 for IERC20;
     using Counters for Counters.Counter;
     Counters.Counter private offerCounter;
 
@@ -134,7 +136,7 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         offers[offerId].borrower = msg.sender;
         offers[offerId].collateral = collateral;
         offers[offerId].acceptTime = block.timestamp;
-        token.transferFrom(msg.sender, address(this), collateral);
+        token.safeTransferFrom(msg.sender, address(this), collateral);
         IERC721(offers[offerId].nft).safeTransferFrom(address(this), msg.sender, offers[offerId].nftId);
         emit OfferStatusChange(offerId, "On");
     }
@@ -156,9 +158,9 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         require(offers[offerId].collateral >= (fee + offers[offerId].liquidation), "Borrower can be Liquidated");
 
         IERC721(offers[offerId].nft).safeTransferFrom(msg.sender, address(this), offers[offerId].nftId);
-        token.transfer(offers[offerId].owner, fee*(100-Fee)/100);
-        token.transfer(PayoutAddress, fee*Fee/100);
-        token.transfer(msg.sender, (offers[offerId].collateral - fee));
+        token.safeTransfer(offers[offerId].owner, fee*(100-Fee)/100);
+        token.safeTransfer(PayoutAddress, fee*Fee/100);
+        token.safeTransfer(msg.sender, (offers[offerId].collateral - fee));
 
         offers[offerId].borrower = address(0);
         offers[offerId].collateral = 0;
@@ -178,7 +180,7 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         require(token.balanceOf(offers[offerId].borrower) >= extraCollateral, "Borrower does not have enough to pay the extra collateral");
 
         offers[offerId].collateral = offers[offerId].collateral + extraCollateral;
-        token.transferFrom(msg.sender, address(this), extraCollateral);
+        token.safeTransferFrom(msg.sender, address(this), extraCollateral);
     }
 
     /**
@@ -191,8 +193,8 @@ contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
         require(offers[offerId].collateral < (fee + offers[offerId].liquidation), "Borrower is not Liquidated");
 
         offers[offerId].status = "Liquidated";
-        token.transfer(offers[offerId].owner, offers[offerId].collateral*(100-LiquidationFee)/100);
-        token.transfer(PayoutAddress, offers[offerId].collateral*LiquidationFee/100);
+        token.safeTransfer(offers[offerId].owner, offers[offerId].collateral*(100-LiquidationFee)/100);
+        token.safeTransfer(PayoutAddress, offers[offerId].collateral*LiquidationFee/100);
         emit OfferStatusChange(offerId, "Liquidated");
     }
 
