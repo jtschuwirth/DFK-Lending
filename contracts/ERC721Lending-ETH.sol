@@ -17,7 +17,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  * set a liquidation limit and fee, and users that borrow the ERC721 token
  * set how much collateral they add to the transaction
  */
-contract ERC721Lending is ERC721Holder, ReentrancyGuard, AccessControl {
+contract ERC721LendingETH is ERC721Holder, ReentrancyGuard, AccessControl {
 
     event OfferStatusChange(uint256 offerId, string status);
 

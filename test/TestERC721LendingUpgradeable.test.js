@@ -8,12 +8,11 @@ const {
     ether,
 } = require('@openzeppelin/test-helpers');
 
-
 const BasicERC20 = artifacts.require("BasicERC20");
 const BasicERC721 = artifacts.require("BasicERC721");
-const ERC721Lending = artifacts.require("ERC721Lending");
+const ERC721LendingUpgradeable = artifacts.require("ERC721LendingUpgradeable");
 
-contract("Testing", (accounts) => {
+contract("TestingUpgradeable", (accounts) => {
     let alice = accounts[0];
     let bob = accounts[1];
     let BasicERC20Contract;
@@ -24,7 +23,7 @@ contract("Testing", (accounts) => {
     before(async () => {
         BasicERC20Contract = await BasicERC20.deployed();
         BasicERC721Contract = await BasicERC721.deployed();
-        ERC721LendingContract = await ERC721Lending.deployed();
+        ERC721LendingContract = await ERC721LendingUpgradeable.deployed();
     });
 
     it("Should be able to mint 100 ERC20 Tokens to account[0] and account[1]", async () => {

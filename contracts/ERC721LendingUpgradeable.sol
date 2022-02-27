@@ -19,7 +19,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
  * set a liquidation limit and fee, and users that borrow the ERC721 token
  * set how much collateral they add to the transaction
  */
-contract ERC721Lending is ERC721HolderUpgradeable, ReentrancyGuardUpgradeable, AccessControlUpgradeable {
+contract ERC721LendingUpgradeable is ERC721HolderUpgradeable, ReentrancyGuardUpgradeable, AccessControlUpgradeable {
 
     event OfferStatusChange(uint256 offerId, string status);
 
@@ -48,6 +48,7 @@ contract ERC721Lending is ERC721HolderUpgradeable, ReentrancyGuardUpgradeable, A
     uint Fee;
     uint LiquidationFee;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
     function initialize(address Payout, address TokenAddress, address BaseERC721Address) initializer public {
