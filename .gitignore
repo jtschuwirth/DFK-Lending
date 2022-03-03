@@ -1,3 +1,4 @@
 node_modules
 .env
 contracts_off
+env
